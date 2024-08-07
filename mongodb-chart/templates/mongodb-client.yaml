@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mongo-client
+  namespace: {{ .Release.Namespace }}
+spec:
+  containers:
+  - name: mongo
+    image: mongo:latest
+    command: ['sleep']
+    args: ['18000']
+  restartPolicy: Never
+
