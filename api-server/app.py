@@ -29,13 +29,17 @@ def list_disabled_customers():
         result.append(customer)
     return jsonify(result)
 
-@app.route('/delete_customer/<customer_id>', methods=['POST'])
-def delete_customer(customer_id):
-    result = customers.delete_one({"customer_id": customer_id})
-    if result.deleted_count > 0:
-        return jsonify({"status": "success"})
-    else:
-        return jsonify({"status": "failed", "reason": "customer not found"}), 404
+@app.route('/delete_disabled_customers', methods=['POST'])
+def delete_disabled_customers():
+    disabled_customers = customers.find({"status": "disabled"})
+    result = []
+    for customer in disabled_customers:
+        delete_result = customers.delete_one({"customer_id": customer["customer_id"]})
+        result.append({
+            "customer_id": customer["customer_id"],
+            "status": "success" if delete_result.deleted_count > 0 else "failed"
+        })
+    return jsonify(result)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
