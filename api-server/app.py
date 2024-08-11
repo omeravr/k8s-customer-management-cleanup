@@ -1,12 +1,15 @@
+import os
 from flask import Flask, jsonify, request
 from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# Connect to MongoDB
-client = MongoClient('mongodb://mongodb:27017/')
-db = client.customerDB  # The database name is customerDB
-customers = db.customers  # The collection name is customers
+# Use environment variable for MongoDB connection string
+mongo_db_uri = os.getenv('MONGO_DB_URI', 'mongodb://root:example@mongodb:27017/')
+client = MongoClient(mongo_db_uri)
+db = client.customerDB
+customers = db.customers
+
 
 @app.route('/list_customers', methods=['GET'])
 def list_customers():

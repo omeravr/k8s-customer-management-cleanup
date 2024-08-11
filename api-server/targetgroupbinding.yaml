@@ -1,0 +1,13 @@
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: api-server-tgb
+  namespace: customer-cleanup
+spec:
+  ipAddressType: ipv4
+  serviceRef:
+    name: api-server
+    port: 5000
+  targetGroupARN: arn:aws:elasticloadbalancing:eu-central-1:045360881194:targetgroup/customer-cleanup-apt-server/7f0db53fbc841f55
+  targetType: ip
+

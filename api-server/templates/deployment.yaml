@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: api-server
-  namespace: {{ .Release.Namespace }}
+  namespace: {{ .Values.namespace }}
 spec:
   replicas: 1
   selector:
@@ -19,8 +19,6 @@ spec:
         ports:
         - containerPort: 5000
         env:
-        - name: MONGO_DB_HOST
-          value: "mongodb"
-        - name: MONGO_DB_PORT
-          value: "27017"
+        - name: MONGO_DB_URI
+          value: "mongodb://root:example@mongodb:27017/"
 

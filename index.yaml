@@ -3,9 +3,9 @@ entries:
   api-server:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2024-08-11T10:48:42.304555022Z"
+    created: "2024-08-11T12:04:03.788134057Z"
     description: A Helm chart for Kubernetes
-    digest: 00bb0c3c4f8129625feae75f79e4f4ab002ddb13f59b32a7479927b62a3359ed
+    digest: d465af5c92662883e1b8f70e29b4a60ce076de25b90808be3f9c7fa9a7c9d679
     name: api-server
     type: application
     urls:
@@ -14,7 +14,7 @@ entries:
   mongodb:
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2024-08-11T10:48:42.30494371Z"
+    created: "2024-08-11T12:04:03.788533135Z"
     description: A Helm chart for Kubernetes
     digest: ecc523aa82f70fe2d72de2e88a2f9bab9b42430e0349f0bafffdd8a9b8093ab1
     name: mongodb
@@ -22,4 +22,4 @@ entries:
     urls:
     - https://omeravr.github.io/k8s-customer-management-cleanup/mongodb-0.1.0.tgz
     version: 0.1.0
-generated: "2024-08-11T10:48:42.304111091Z"
+generated: "2024-08-11T12:04:03.78774758Z"
