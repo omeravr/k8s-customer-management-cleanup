@@ -29,29 +29,28 @@ jobs:
 
       - name: Terraform Plan
         working-directory: terraform/eks-managed-node-group
-        run: terraform plan
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
-          CLUSTER_VERSION: ${{ secrets.CLUSTER_VERSION }}
-          VPC_ID: ${{ secrets.VPC_ID }}
-          SUBNET_IDS: ${{ secrets.SUBNET_IDS }}
-          LB_SUBNET_IDS: ${{ secrets.LB_SUBNET_IDS }}
-          INSTANCE_TYPES: ${{ secrets.INSTANCE_TYPES }}
-          LB_INTERNAL: ${{ secrets.LB_INTERNAL }}
-
+        run: terraform plan \
+          -var="aws_region=${{ secrets.AWS_REGION }}" \
+          -var="cluster_name=${{ secrets.CLUSTER_NAME }}" \
+          -var="cluster_version=${{ secrets.CLUSTER_VERSION }}" \
+          -var="vpc_id=${{ secrets.VPC_ID }}" \
+          -var="subnet_ids=${{ secrets.SUBNET_IDS }}" \
+          -var="lb_subnet_ids=${{ secrets.LB_SUBNET_IDS }}" \
+          -var="instance_types=${{ secrets.INSTANCE_TYPES }}" \
+          -var="lb_internal=${{ secrets.LB_INTERNAL }}"
+      
       - name: Terraform Apply
         working-directory: terraform/eks-managed-node-group
-        run: terraform apply -auto-approve
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-          CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
-          CLUSTER_VERSION: ${{ secrets.CLUSTER_VERSION }}
-          VPC_ID: ${{ secrets.VPC_ID }}
-          SUBNET_IDS: ${{ secrets.SUBNET_IDS }}
-          LB_SUBNET_IDS: ${{ secrets.LB_SUBNET_IDS }}
-          INSTANCE_TYPES: ${{ secrets.INSTANCE_TYPES }}
-          LB_INTERNAL: ${{ secrets.LB_INTERNAL }}
+        run: terraform apply -auto-approve \
+          -var="aws_region=${{ secrets.AWS_REGION }}" \
+          -var="cluster_name=${{ secrets.CLUSTER_NAME }}" \
+          -var="cluster_version=${{ secrets.CLUSTER_VERSION }}" \
+          -var="vpc_id=${{ secrets.VPC_ID }}" \
+          -var="subnet_ids=${{ secrets.SUBNET_IDS }}" \
+          -var="lb_subnet_ids=${{ secrets.LB_SUBNET_IDS }}" \
+          -var="instance_types=${{ secrets.INSTANCE_TYPES }}" \
+          -var="lb_internal=${{ secrets.LB_INTERNAL }}"
+
 
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.CLUSTER_NAME }}
