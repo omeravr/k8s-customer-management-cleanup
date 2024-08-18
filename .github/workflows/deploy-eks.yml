@@ -78,8 +78,23 @@ jobs:
           kubectl apply -f app/test/targetgroupbinding.yaml
 
 
-    # Add a separate step for terraform destroy if the workflow fails
-    - name: Terraform Destroy on Failure
-      if: failure()  # This step will only run if the previous steps fail
-      working-directory: terraform/eks-managed-node-group
-      run: terraform destroy -auto-approve
+ # Add a new job to handle the failure condition and run terraform destroy
+    cleanup:
+      runs-on: self-hosted
+      if: failure()  # This job will only run if the deploy job fails
+      needs: deploy  # This ensures the cleanup job runs after the deploy job
+
+      steps:
+        - name: Checkout the repository
+          uses: actions/checkout@v2
+
+        - name: Setup Terraform
+          uses: hashicorp/setup-terraform@v1
+
+        - name: Navigate to Terraform configuration
+          working-directory: terraform/eks-managed-node-group
+          run: pwd  # Prints the current directory to ensure we're in the right place
+
+        - name: Terraform Destroy
+          working-directory: terraform/eks-managed-node-group
+          run: terraform destroy -auto-approve
