@@ -19,13 +19,17 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
+      - name: Navigate to Terraform configuration
+        working-directory: terraform/eks-managed-node-group
+        run: pwd  # Prints the current directory to ensure we're in the right place
+
       - name: Terraform Init
+        working-directory: terraform/eks-managed-node-group
         run: terraform init
-        working-directory: ./terraform/eks-managed-node-group
 
       - name: Terraform Plan
+        working-directory: terraform/eks-managed-node-group
         run: terraform plan
-        working-directory: ./terraform/eks-managed-node-group
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
@@ -37,8 +41,8 @@ jobs:
           LB_INTERNAL: ${{ secrets.LB_INTERNAL }}
 
       - name: Terraform Apply
+        working-directory: terraform/eks-managed-node-group
         run: terraform apply -auto-approve
-        working-directory: ./terraform/eks-managed-node-group
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
