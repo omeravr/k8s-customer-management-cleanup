@@ -34,11 +34,11 @@ jobs:
           -var="cluster_name=${{ secrets.CLUSTER_NAME }}" \
           -var="cluster_version=${{ secrets.CLUSTER_VERSION }}" \
           -var="vpc_id=${{ secrets.VPC_ID }}" \
-          -var="subnet_ids=${{ secrets.SUBNET_IDS }}" \
-          -var="lb_subnet_ids=${{ secrets.LB_SUBNET_IDS }}" \
-          -var="instance_types=${{ secrets.INSTANCE_TYPES }}" \
+          -var="subnet_ids=[${{ secrets.SUBNET_IDS }}]" \
+          -var="lb_subnet_ids=[${{ secrets.LB_SUBNET_IDS }}]" \
+          -var="instance_types=[${{ secrets.INSTANCE_TYPES }}]" \
           -var="lb_internal=${{ secrets.LB_INTERNAL }}"
-      
+
       - name: Terraform Apply
         working-directory: terraform/eks-managed-node-group
         run: terraform apply -auto-approve \
@@ -46,11 +46,10 @@ jobs:
           -var="cluster_name=${{ secrets.CLUSTER_NAME }}" \
           -var="cluster_version=${{ secrets.CLUSTER_VERSION }}" \
           -var="vpc_id=${{ secrets.VPC_ID }}" \
-          -var="subnet_ids=${{ secrets.SUBNET_IDS }}" \
-          -var="lb_subnet_ids=${{ secrets.LB_SUBNET_IDS }}" \
-          -var="instance_types=${{ secrets.INSTANCE_TYPES }}" \
+          -var="subnet_ids=[${{ secrets.SUBNET_IDS }}]" \
+          -var="lb_subnet_ids=[${{ secrets.LB_SUBNET_IDS }}]" \
+          -var="instance_types=[${{ secrets.INSTANCE_TYPES }}]" \
           -var="lb_internal=${{ secrets.LB_INTERNAL }}"
-
 
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.CLUSTER_NAME }}
