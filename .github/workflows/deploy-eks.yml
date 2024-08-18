@@ -23,33 +23,29 @@ jobs:
         working-directory: terraform/eks-managed-node-group
         run: pwd  # Prints the current directory to ensure we're in the right place
 
+      - name: Create terraform.tfvars file
+        working-directory: terraform/eks-managed-node-group
+        run: |
+          echo 'aws_region       = "${{ secrets.AWS_REGION }}"' > terraform.tfvars
+          echo 'cluster_name     = "${{ secrets.CLUSTER_NAME }}"' >> terraform.tfvars
+          echo 'cluster_version  = "${{ secrets.CLUSTER_VERSION }}"' >> terraform.tfvars
+          echo 'vpc_id           = "${{ secrets.VPC_ID }}"' >> terraform.tfvars
+          echo 'subnet_ids       = ["${{ secrets.SUBNET_IDS }}"]' >> terraform.tfvars
+          echo 'lb_subnet_ids    = ["${{ secrets.LB_SUBNET_IDS }}"]' >> terraform.tfvars
+          echo 'instance_types   = ["${{ secrets.INSTANCE_TYPES }}"]' >> terraform.tfvars
+          echo 'lb_internal      = "${{ secrets.LB_INTERNAL }}"' >> terraform.tfvars
+
       - name: Terraform Init
         working-directory: terraform/eks-managed-node-group
         run: terraform init
 
       - name: Terraform Plan
         working-directory: terraform/eks-managed-node-group
-        run: terraform plan \
-          -var="aws_region=${{ secrets.AWS_REGION }}" \
-          -var="cluster_name=${{ secrets.CLUSTER_NAME }}" \
-          -var="cluster_version=${{ secrets.CLUSTER_VERSION }}" \
-          -var="vpc_id=${{ secrets.VPC_ID }}" \
-          -var="subnet_ids=[${{ secrets.SUBNET_IDS }}]" \
-          -var="lb_subnet_ids=[${{ secrets.LB_SUBNET_IDS }}]" \
-          -var="instance_types=[${{ secrets.INSTANCE_TYPES }}]" \
-          -var="lb_internal=${{ secrets.LB_INTERNAL }}"
+        run: terraform plan
 
       - name: Terraform Apply
         working-directory: terraform/eks-managed-node-group
-        run: terraform apply -auto-approve \
-          -var="aws_region=${{ secrets.AWS_REGION }}" \
-          -var="cluster_name=${{ secrets.CLUSTER_NAME }}" \
-          -var="cluster_version=${{ secrets.CLUSTER_VERSION }}" \
-          -var="vpc_id=${{ secrets.VPC_ID }}" \
-          -var="subnet_ids=[${{ secrets.SUBNET_IDS }}]" \
-          -var="lb_subnet_ids=[${{ secrets.LB_SUBNET_IDS }}]" \
-          -var="instance_types=[${{ secrets.INSTANCE_TYPES }}]" \
-          -var="lb_internal=${{ secrets.LB_INTERNAL }}"
+        run: terraform apply -auto-approve
 
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.CLUSTER_NAME }}
