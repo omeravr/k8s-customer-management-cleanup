@@ -17,7 +17,7 @@ jobs:
           node-version: '14'
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1  # Correct repository
+        uses: hashicorp/setup-terraform@v1
 
       - name: Terraform Init
         run: terraform init
