@@ -77,3 +77,10 @@ jobs:
           sed -i "s#TARGET_GROUP_ARN_PLACEHOLDER#${TG_ARN}#g" app/test/targetgroupbinding.yaml
           kubectl apply -f app/test/targetgroupbinding.yaml
 
+
+    # Run terraform destroy only if the workflow fails
+    post:
+      - name: Terraform Destroy
+        if: failure()  # Runs only if the job fails
+        working-directory: terraform/eks-managed-node-group
+        run: terraform destroy -auto-approve
