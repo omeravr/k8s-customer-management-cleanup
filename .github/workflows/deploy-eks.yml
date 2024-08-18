@@ -19,11 +19,16 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
+      - name: Change directory to Terraform configuration
+        run: cd terraform/eks-managed-node-group
+
       - name: Terraform Init
         run: terraform init
+        working-directory: ./terraform/eks-managed-node-group
 
       - name: Terraform Plan
         run: terraform plan
+        working-directory: ./terraform/eks-managed-node-group
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
@@ -36,6 +41,7 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve
+        working-directory: ./terraform/eks-managed-node-group
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
           CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
