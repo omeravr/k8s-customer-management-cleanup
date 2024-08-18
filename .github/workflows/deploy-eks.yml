@@ -6,7 +6,7 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
-    
+
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
@@ -14,10 +14,10 @@ jobs:
       - name: Setup Node.js (Install Node.js)
         uses: actions/setup-node@v2
         with:
-          node-version: '14'  # or the version you need
+          node-version: '14'
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v1
+        uses: hashicorp/setup-terraform@v1  # Correct repository
 
       - name: Terraform Init
         run: terraform init
@@ -48,7 +48,7 @@ jobs:
 
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.CLUSTER_NAME }}
-        
+
       - name: Install AWS Load Balancer Controller
         run: |
           eksctl create iamserviceaccount \
