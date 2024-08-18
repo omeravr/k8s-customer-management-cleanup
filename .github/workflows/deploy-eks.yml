@@ -77,8 +77,23 @@ jobs:
           sed -i "s#TARGET_GROUP_ARN_PLACEHOLDER#${TG_ARN}#g" app/test/targetgroupbinding.yaml
           kubectl apply -f app/test/targetgroupbinding.yaml
 
-    # Cleanup step that runs if the workflow fails or succeeds
-    - name: Terraform Destroy on Failure
-      if: failure()
-      working-directory: terraform/eks-managed-node-group
-      run: terraform destroy -auto-approve
+
+  # Separate cleanup job for destruction if the deployment job fails
+  cleanup:
+    runs-on: self-hosted
+    needs: deploy
+    if: failure()
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Navigate to Terraform configuration
+        working-directory: terraform/eks-managed-node-group
+        run: pwd
+
+      - name: Terraform Destroy on Failure
+        working-directory: terraform/eks-managed-node-group
+        run: terraform destroy -auto-approve
