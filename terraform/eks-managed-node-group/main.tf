@@ -6,18 +6,28 @@ module "eks_al2" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"
 
-  cluster_name    = var.cluster_name
+  cluster_name    = var.cluster_name  # Use the cluster name from the variable
   cluster_version = var.cluster_version
 
   enable_cluster_creator_admin_permissions = true
 
-  vpc_id     = var.vpc_id
-  subnet_ids = split(",", var.subnet_ids)
+  # EKS Addons
+  cluster_addons = {
+    coredns                = {}
+    eks-pod-identity-agent = {}
+    kube-proxy             = {}
+    vpc-cni                = {}
+  }
+
+  vpc_id = var.vpc_id  # Existing VPC ID
+
+  # Ensure these subnets are correctly configured
+  subnet_ids = var.subnet_ids  # List of subnets
 
   eks_managed_node_groups = {
     example = {
       ami_type       = "AL2_x86_64"
-      instance_types = split(",", var.instance_types)
+      instance_types = var.instance_types  # List of instance types
       min_size       = 2
       max_size       = 5
       desired_size   = 2
@@ -31,7 +41,7 @@ module "eks_al2" {
   }
 }
 
-# Add inbound rule to EKS security group
+# Add inbound rule allowing all traffic from 0.0.0.0/0 to the existing EKS security group
 resource "aws_security_group_rule" "allow_all_inbound" {
   type              = "ingress"
   from_port         = 0
@@ -48,7 +58,7 @@ resource "aws_security_group_rule" "node_sg_allow_all_traffic" {
   to_port           = 0
   protocol          = "-1"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = module.eks_al2.node_security_group_id
+  security_group_id = module.eks_al2.node_security_group_id  # Node security group ID
 }
 
 resource "aws_security_group_rule" "node_sg_allow_tcp_all" {
@@ -57,7 +67,7 @@ resource "aws_security_group_rule" "node_sg_allow_tcp_all" {
   to_port           = 0
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = module.eks_al2.node_security_group_id
+  security_group_id = module.eks_al2.node_security_group_id  # Node security group ID
 }
 
 # Create the Network Load Balancer
@@ -65,7 +75,7 @@ resource "aws_lb" "network_lb" {
   name               = "eks-nlb"
   internal           = var.lb_internal
   load_balancer_type = "network"
-  subnets            = split(",", var.lb_subnet_ids)
+  subnets            = var.lb_subnet_ids  # List of subnets for the LB
 
   tags = {
     Name = "eks-nlb"
@@ -77,7 +87,7 @@ resource "aws_lb_target_group" "nlb_target_group" {
   name        = "eks-nlb-tg"
   port        = 80
   protocol    = "TCP"
-  vpc_id      = var.vpc_id
+  vpc_id      = var.vpc_id  # Use the VPC ID directly
   target_type = "instance"
 
   health_check {
