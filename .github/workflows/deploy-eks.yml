@@ -1,4 +1,4 @@
-name: Deploy EKS Cluster and Application
+iname: EKS Deployment
 
 on:
   workflow_dispatch:  # Manual trigger
@@ -6,83 +6,68 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
-
-    env:
-      AWS_REGION: ${{ secrets.AWS_REGION }}
-      CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
-      CLUSTER_VERSION: ${{ secrets.CLUSTER_VERSION }}
-      VPC_ID: ${{ secrets.VPC_ID }}
-      SUBNET_IDS: ${{ secrets.SUBNET_IDS }}
-      INSTANCE_TYPES: ${{ secrets.INSTANCE_TYPES }}
-      LB_INTERNAL: ${{ secrets.LB_INTERNAL }}
-      AWS_LBC_POLICY_ARN: ${{ secrets.AWS_LBC_POLICY_ARN }}
-
+    
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Set up Terraform
-      uses: hashicorp/setup-terraform@v1
-      with:
-        terraform_version: 1.3.2
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
 
-    - name: Initialize Terraform
-      working-directory: ./terraform/eks-managed-node-group
-      run: terraform init
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Plan
-      working-directory: ./terraform/eks-managed-node-group
-      run: terraform plan -var "region=$AWS_REGION" \
-                          -var "cluster_name=$CLUSTER_NAME" \
-                          -var "cluster_version=$CLUSTER_VERSION" \
-                          -var "vpc_id=$VPC_ID" \
-                          -var "subnet_ids=$SUBNET_IDS" \
-                          -var "instance_types=$INSTANCE_TYPES" \
-                          -var "lb_internal=$LB_INTERNAL"
+      - name: Terraform Plan
+        run: terraform plan
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+          CLUSTER_VERSION: ${{ secrets.CLUSTER_VERSION }}
+          VPC_ID: ${{ secrets.VPC_ID }}
+          SUBNET_IDS: ${{ secrets.SUBNET_IDS }}
+          LB_SUBNET_IDS: ${{ secrets.LB_SUBNET_IDS }}
+          INSTANCE_TYPES: ${{ secrets.INSTANCE_TYPES }}
+          LB_INTERNAL: ${{ secrets.LB_INTERNAL }}
 
-    - name: Terraform Apply
-      working-directory: ./terraform/eks-managed-node-group
-      run: terraform apply -auto-approve -var "region=$AWS_REGION" \
-                                             -var "cluster_name=$CLUSTER_NAME" \
-                                             -var "cluster_version=$CLUSTER_VERSION" \
-                                             -var "vpc_id=$VPC_ID" \
-                                             -var "subnet_ids=$SUBNET_IDS" \
-                                             -var "instance_types=$INSTANCE_TYPES" \
-                                             -var "lb_internal=$LB_INTERNAL"
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+          CLUSTER_NAME: ${{ secrets.CLUSTER_NAME }}
+          CLUSTER_VERSION: ${{ secrets.CLUSTER_VERSION }}
+          VPC_ID: ${{ secrets.VPC_ID }}
+          SUBNET_IDS: ${{ secrets.SUBNET_IDS }}
+          LB_SUBNET_IDS: ${{ secrets.LB_SUBNET_IDS }}
+          INSTANCE_TYPES: ${{ secrets.INSTANCE_TYPES }}
+          LB_INTERNAL: ${{ secrets.LB_INTERNAL }}
 
-    - name: Configure kubectl with AWS EKS
-      run: aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+      - name: Update kubeconfig for EKS
+        run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.CLUSTER_NAME }}
+        
+      - name: Install AWS Load Balancer Controller
+        run: |
+          eksctl create iamserviceaccount \
+            --cluster ${{ secrets.CLUSTER_NAME }} \
+            --namespace kube-system \
+            --name aws-load-balancer-controller \
+            --attach-policy-arn ${{ secrets.AWS_LBC_POLICY_ARN }} \
+            --approve
 
-    - name: Deploy AWS Load Balancer Controller IAM Role
-      run: eksctl create iamserviceaccount \
-        --name aws-load-balancer-controller \
-        --namespace kube-system \
-        --cluster $CLUSTER_NAME \
-        --attach-policy-arn $AWS_LBC_POLICY_ARN \
-        --approve
+          helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
+            -n kube-system \
+            --set clusterName=${{ secrets.CLUSTER_NAME }} \
+            --set serviceAccount.create=false \
+            --set serviceAccount.name=aws-load-balancer-controller \
+            --set region=${{ secrets.AWS_REGION }} \
+            --set vpcId=${{ secrets.VPC_ID }}
 
-    - name: Deploy AWS Load Balancer Controller with Helm
-      run: |
-        helm repo add eks https://aws.github.io/eks-charts
-        helm repo update
-        helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
-          -n kube-system \
-          --set clusterName=$CLUSTER_NAME \
-          --set serviceAccount.create=false \
-          --set serviceAccount.name=aws-load-balancer-controller \
-          --set region=$AWS_REGION \
-          --set vpcId=$VPC_ID
+      - name: Deploy NGINX App
+        run: |
+          kubectl apply -f app/test/nginx-deployment.yaml
 
-    - name: Set environment variables for Kubernetes
-      run: |
-        echo "export TG_ARN=$(aws elbv2 describe-target-groups --names eks-nlb-tg --query 'TargetGroups[0].TargetGroupArn' --output text)" >> $GITHUB_ENV
-
-    - name: Deploy Nginx application to EKS
-      run: |
-        kubectl apply -f app/test/nginx-deployment.yaml
-
-    - name: Update TargetGroupBinding with TargetGroup ARN
-      run: |
-        sed -i "s|targetGroupARN: .*|targetGroupARN: \"$TG_ARN\"|" app/test/targetgroupbinding.yaml
-        kubectl apply -f app/test/targetgroupbinding.yaml
+      - name: Create TargetGroupBinding for NGINX App
+        run: |
+          TG_ARN=$(aws elbv2 describe-target-groups --query "TargetGroups[?TargetGroupName=='eks-nlb-tg'].TargetGroupArn" --output text)
+          sed -i "s#TARGET_GROUP_ARN_PLACEHOLDER#${TG_ARN}#g" app/test/targetgroupbinding.yaml
+          kubectl apply -f app/test/targetgroupbinding.yaml
 

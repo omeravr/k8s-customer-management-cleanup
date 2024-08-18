@@ -1,5 +1,5 @@
 provider "aws" {
-  region = var.region
+  region = var.aws_region
 }
 
 module "eks_al2" {
@@ -11,21 +11,13 @@ module "eks_al2" {
 
   enable_cluster_creator_admin_permissions = true
 
-  # EKS Addons
-  cluster_addons = {
-    coredns                = {}
-    eks-pod-identity-agent = {}
-    kube-proxy             = {}
-    vpc-cni                = {}
-  }
-
-  vpc_id    = var.vpc_id
-  subnet_ids = var.subnet_ids
+  vpc_id     = var.vpc_id
+  subnet_ids = split(",", var.subnet_ids)
 
   eks_managed_node_groups = {
     example = {
       ami_type       = "AL2_x86_64"
-      instance_types = var.instance_types
+      instance_types = split(",", var.instance_types)
       min_size       = 2
       max_size       = 5
       desired_size   = 2
@@ -33,12 +25,13 @@ module "eks_al2" {
   }
 
   tags = {
-    Example    = "ex-eks-mng"
+    Example    = var.cluster_name
     GithubRepo = "terraform-aws-eks"
     GithubOrg  = "terraform-aws-modules"
   }
 }
 
+# Add inbound rule to EKS security group
 resource "aws_security_group_rule" "allow_all_inbound" {
   type              = "ingress"
   from_port         = 0
@@ -48,6 +41,7 @@ resource "aws_security_group_rule" "allow_all_inbound" {
   security_group_id = module.eks_al2.cluster_security_group_id
 }
 
+# Add missing inbound rules to the node security group
 resource "aws_security_group_rule" "node_sg_allow_all_traffic" {
   type              = "ingress"
   from_port         = 0
@@ -66,17 +60,19 @@ resource "aws_security_group_rule" "node_sg_allow_tcp_all" {
   security_group_id = module.eks_al2.node_security_group_id
 }
 
+# Create the Network Load Balancer
 resource "aws_lb" "network_lb" {
   name               = "eks-nlb"
   internal           = var.lb_internal
   load_balancer_type = "network"
-  subnets            = var.subnet_ids
+  subnets            = split(",", var.lb_subnet_ids)
 
   tags = {
     Name = "eks-nlb"
   }
 }
 
+# Create a target group for the NLB
 resource "aws_lb_target_group" "nlb_target_group" {
   name        = "eks-nlb-tg"
   port        = 80
@@ -97,6 +93,7 @@ resource "aws_lb_target_group" "nlb_target_group" {
   }
 }
 
+# Create a listener for the NLB
 resource "aws_lb_listener" "nlb_listener" {
   load_balancer_arn = aws_lb.network_lb.arn
   port              = 80
