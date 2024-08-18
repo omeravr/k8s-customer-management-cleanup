@@ -8,21 +8,16 @@ jobs:
     runs-on: self-hosted
     
     steps:
-      - name: Checkout code
+      - name: Checkout the repository
         uses: actions/checkout@v2
 
-
-      # When running on self-hosted GitHub Actions runners,
-      # NodeJS must be previously installed with the version specified in the action.yml.
-      - uses: actions/setup-node@v2
+      - name: Setup Node.js (Install Node.js)
+        uses: actions/setup-node@v2
         with:
-          node-version: '20'
-      
-      - name: Setup terraform
-        uses: actions/setup-terraform@v3
-        with:
-          terraform_version: '1.2.0'
+          node-version: '14'  # or the version you need
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
 
       - name: Terraform Init
         run: terraform init
