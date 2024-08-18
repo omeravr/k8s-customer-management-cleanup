@@ -78,9 +78,8 @@ jobs:
           kubectl apply -f app/test/targetgroupbinding.yaml
 
 
-    # Run terraform destroy only if the workflow fails
-    post:
-      - name: Terraform Destroy
-        if: failure()  # Runs only if the job fails
-        working-directory: terraform/eks-managed-node-group
-        run: terraform destroy -auto-approve
+    # Add a separate step for terraform destroy if the workflow fails
+    - name: Terraform Destroy on Failure
+      if: failure()  # This step will only run if the previous steps fail
+      working-directory: terraform/eks-managed-node-group
+      run: terraform destroy -auto-approve
