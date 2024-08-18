@@ -78,7 +78,6 @@ jobs:
           kubectl apply -f app/test/targetgroupbinding.yaml
 
 
-  # Separate cleanup job for destruction if the deployment job fails
   cleanup:
     runs-on: self-hosted
     needs: deploy
@@ -86,6 +85,11 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v2
+
+      - name: Setup Node.js (Install Node.js)
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
