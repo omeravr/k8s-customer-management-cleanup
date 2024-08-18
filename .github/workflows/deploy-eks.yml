@@ -1,4 +1,4 @@
-iname: EKS Deployment
+name: EKS Deployment
 
 on:
   workflow_dispatch:  # Manual trigger
