@@ -36,6 +36,7 @@ variable "instance_types" {
 variable "lb_subnet_ids" {
   description = "Subnets for the Load Balancer"
   type        = list(string)
+  default     = []
 }
 
 variable "lb_internal" {
