@@ -1,7 +1,6 @@
 variable "region" {
   description = "AWS region"
   type        = string
-  default     = ""
 }
 
 variable "cluster_name" {
@@ -32,6 +31,11 @@ variable "instance_types" {
   description = "Instance types for the EKS node group"
   type        = list(string)
   default     = []
+}
+
+variable "lb_subnet_ids" {
+  description = "Subnets for the Load Balancer"
+  type        = list(string)
 }
 
 variable "lb_internal" {
