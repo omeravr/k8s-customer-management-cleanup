@@ -30,9 +30,9 @@ jobs:
           echo 'cluster_name     = "${{ secrets.CLUSTER_NAME }}"' >> terraform.tfvars
           echo 'cluster_version  = "${{ secrets.CLUSTER_VERSION }}"' >> terraform.tfvars
           echo 'vpc_id           = "${{ secrets.VPC_ID }}"' >> terraform.tfvars
-          echo 'subnet_ids       = ["${{ join("\",\"", secrets.SUBNET_IDS.split(",") ) }}"]' >> terraform.tfvars
-          echo 'lb_subnet_ids    = ["${{ join("\",\"", secrets.LB_SUBNET_IDS.split(",") ) }}"]' >> terraform.tfvars
-          echo 'instance_types   = ["${{ join("\",\"", secrets.INSTANCE_TYPES.split(",") ) }}"]' >> terraform.tfvars
+          echo 'subnet_ids       = ["${{ secrets.SUBNET_IDS }}"]' | sed 's/,/", "/g' >> terraform.tfvars
+          echo 'lb_subnet_ids    = ["${{ secrets.LB_SUBNET_IDS }}"]' | sed 's/,/", "/g' >> terraform.tfvars
+          echo 'instance_types   = ["${{ secrets.INSTANCE_TYPES }}"]' | sed 's/,/", "/g' >> terraform.tfvars
           echo 'lb_internal      = "${{ secrets.LB_INTERNAL }}"' >> terraform.tfvars
 
 
