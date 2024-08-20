@@ -19,12 +19,13 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      - name: Create terraform.tfvars file
-        run: |
-          echo 'aws_region = "eu-central-1"' > terraform.tfvars
-          echo 'instance_type = "t2.micro"' >> terraform.tfvars
+      # Ensure working directory points to where the Terraform files are
+      - name: Navigate to Terraform configuration
+        working-directory: terraform/ec2
+        run: pwd  # Verifies we're in the right directory
 
       - name: Terraform Init (S3 Backend)
+        working-directory: terraform/ec2
         run: |
           terraform init -backend-config="bucket=terraform-test-ec2-s3-state" \
                          -backend-config="key=terraform/ec2/state.tfstate" \
@@ -32,8 +33,10 @@ jobs:
                          -backend-config="encrypt=true"
 
       - name: Terraform Plan
+        working-directory: terraform/ec2
         run: terraform plan
 
       - name: Terraform Apply
+        working-directory: terraform/ec2
         run: terraform apply -auto-approve
 
