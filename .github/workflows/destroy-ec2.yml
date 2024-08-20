@@ -1,10 +1,10 @@
-name: Destroy EC2
+name: Destroy EC2 and S3
 
 on:
   workflow_dispatch:  # Manual trigger
 
 jobs:
-  destroy_ec2:
+  destroy_ec2_s3:
     runs-on: self-hosted
 
     steps:
@@ -19,7 +19,12 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
+      - name: Navigate to Terraform configuration
+        working-directory: terraform/ec2
+        run: pwd  # Verifies we're in the right directory
+
       - name: Terraform Init (S3 Backend)
+        working-directory: terraform/ec2
         run: |
           terraform init -backend-config="bucket=terraform-test-ec2-s3-state" \
                          -backend-config="key=terraform/ec2/state.tfstate" \
@@ -27,5 +32,6 @@ jobs:
                          -backend-config="encrypt=true"
 
       - name: Terraform Destroy
+        working-directory: terraform/ec2
         run: terraform destroy -auto-approve
 

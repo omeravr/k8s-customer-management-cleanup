@@ -1,10 +1,10 @@
-name: Create EC2
+name: Create EC2 and S3
 
 on:
   workflow_dispatch:  # Manual trigger
 
 jobs:
-  create_ec2:
+  create_ec2_s3:
     runs-on: self-hosted
 
     steps:
@@ -19,18 +19,13 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      # Ensure working directory points to where the Terraform files are
       - name: Navigate to Terraform configuration
         working-directory: terraform/ec2
         run: pwd  # Verifies we're in the right directory
 
-      - name: Terraform Init (S3 Backend)
+      - name: Terraform Init (Local State)
         working-directory: terraform/ec2
-        run: |
-          terraform init -backend-config="bucket=terraform-test-ec2-s3-state" \
-                         -backend-config="key=terraform/ec2/state.tfstate" \
-                         -backend-config="region=eu-central-1" \
-                         -backend-config="encrypt=true"
+        run: terraform init
 
       - name: Terraform Plan
         working-directory: terraform/ec2
