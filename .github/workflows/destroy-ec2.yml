@@ -1,0 +1,31 @@
+name: Destroy EC2
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  destroy_ec2:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js (Install Node.js)
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Terraform Init (S3 Backend)
+        run: |
+          terraform init -backend-config="bucket=terraform-test-ec2-s3-state" \
+                         -backend-config="key=terraform/ec2/state.tfstate" \
+                         -backend-config="region=eu-central-1" \
+                         -backend-config="encrypt=true"
+
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve
+
