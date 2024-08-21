@@ -1,10 +1,10 @@
-name: Create EC2 and S3
+name: Apply EC2 Terraform
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:  # Trigger manually
 
 jobs:
-  create_ec2_s3:
+  apply_ec2:
     runs-on: self-hosted
 
     steps:
@@ -19,19 +19,10 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      - name: Navigate to Terraform configuration
+      # Apply Terraform Configuration for EC2
+      - name: Terraform Init and Apply EC2
         working-directory: terraform/ec2
-        run: pwd  # Verifies we're in the right directory
-
-      - name: Terraform Init (Local State)
-        working-directory: terraform/ec2
-        run: terraform init
-
-      - name: Terraform Plan
-        working-directory: terraform/ec2
-        run: terraform plan
-
-      - name: Terraform Apply
-        working-directory: terraform/ec2
-        run: terraform apply -auto-approve
+        run: |
+          terraform init
+          terraform apply -auto-approve
 
