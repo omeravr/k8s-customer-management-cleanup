@@ -1,10 +1,10 @@
 name: Destroy EC2 and S3
 
 on:
-  workflow_dispatch:  # Manual trigger
+  workflow_dispatch:
 
 jobs:
-  destroy_ec2_s3:
+  destroy:
     runs-on: self-hosted
 
     steps:
@@ -19,19 +19,35 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      - name: Navigate to Terraform configuration
-        working-directory: terraform/ec2
-        run: pwd  # Verifies we're in the right directory
-
-      - name: Terraform Init (S3 Backend)
+      # Step 1: Initialize Terraform and destroy EC2 instance
+      - name: Terraform Init and Destroy EC2
         working-directory: terraform/ec2
         run: |
-          terraform init -backend-config="bucket=terraform-test-ec2-s3-state" \
+          terraform init -backend-config="bucket=terraform-remote-state-ec2-test" \
                          -backend-config="key=terraform/ec2/state.tfstate" \
                          -backend-config="region=eu-central-1" \
                          -backend-config="encrypt=true"
+          terraform destroy -auto-approve
+        env:
+          AWS_REGION: eu-central-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Terraform Destroy
-        working-directory: terraform/ec2
-        run: terraform destroy -auto-approve
+      # Step 2: Empty the S3 Bucket
+      - name: Empty S3 Bucket
+        run: |
+          aws s3 rm s3://terraform-remote-state-ec2-test --recursive
+        env:
+          AWS_REGION: eu-central-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Step 3: Delete S3 Bucket
+      - name: Delete S3 Bucket
+        run: |
+          aws s3api delete-bucket --bucket terraform-remote-state-ec2-test --region eu-central-1
+        env:
+          AWS_REGION: eu-central-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 

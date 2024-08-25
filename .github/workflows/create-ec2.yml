@@ -1,10 +1,10 @@
-name: Apply EC2 Terraform
+name: Create EC2 with S3 State
 
 on:
-  workflow_dispatch:  # Trigger manually
+  workflow_dispatch:
 
 jobs:
-  apply_ec2:
+  deploy:
     runs-on: self-hosted
 
     steps:
@@ -19,10 +19,27 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      # Apply Terraform Configuration for EC2
-      - name: Terraform Init and Apply EC2
+      # Step 1: Create the S3 bucket to store the Terraform state
+      - name: Create S3 Bucket
+        run: |
+          aws s3api create-bucket --bucket terraform-remote-state-ec2-test --region eu-central-1
+          aws s3api wait bucket-exists --bucket terraform-remote-state-ec2-test
+        env:
+          AWS_REGION: eu-central-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      # Step 2: Initialize Terraform and create EC2 instance
+      - name: Terraform Init and Apply
         working-directory: terraform/ec2
         run: |
-          terraform init
+          terraform init -backend-config="bucket=terraform-remote-state-ec2-test" \
+                         -backend-config="key=terraform/ec2/state.tfstate" \
+                         -backend-config="region=eu-central-1" \
+                         -backend-config="encrypt=true"
           terraform apply -auto-approve
+        env:
+          AWS_REGION: eu-central-1
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
