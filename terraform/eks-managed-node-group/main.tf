@@ -2,6 +2,15 @@ provider "aws" {
   region = var.aws_region
 }
 
+terraform {
+  backend "s3" {
+    bucket = "terraform-remote-state-eks-test"
+    key    = "eks/terraform.tfstate"
+    region = var.aws_region
+    encrypt = true
+  }
+}
+
 module "eks_al2" {
   source  = "terraform-aws-modules/eks/aws"
   version = "~> 20.0"

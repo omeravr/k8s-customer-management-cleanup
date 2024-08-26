@@ -1,4 +1,4 @@
-name: EKS Deployment
+name: EKS Deployment with Remote State in S3
 
 on:
   workflow_dispatch:  # Manual trigger
@@ -19,6 +19,12 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
+      - name: Create S3 bucket for remote state
+        run: |
+          aws s3api create-bucket --bucket terraform-remote-state-eks-test --region eu-central-1 --create-bucket-configuration LocationConstraint=eu-central-1 || echo "Bucket already exists"
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
       - name: Navigate to Terraform configuration
         working-directory: terraform/eks-managed-node-group
         run: pwd  # Prints the current directory to ensure we're in the right place
@@ -35,8 +41,7 @@ jobs:
           echo 'instance_types   = ["${{ secrets.INSTANCE_TYPES }}"]' | sed 's/,/", "/g' >> terraform.tfvars
           echo 'lb_internal      = "${{ secrets.LB_INTERNAL }}"' >> terraform.tfvars
 
-
-      - name: Terraform Init
+      - name: Terraform Init with remote state
         working-directory: terraform/eks-managed-node-group
         run: terraform init
 
@@ -69,8 +74,7 @@ jobs:
             --set vpcId=${{ secrets.VPC_ID }}
 
       - name: Deploy NGINX App
-        run: |
-          kubectl apply -f app/test/nginx-deployment.yaml
+        run: kubectl apply -f app/test/nginx-deployment.yaml
 
       - name: Create TargetGroupBinding for NGINX App
         run: |

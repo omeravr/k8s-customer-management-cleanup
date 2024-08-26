@@ -1,0 +1,39 @@
+name: EKS Teardown with Remote State in S3
+
+on:
+  workflow_dispatch:  # Manual trigger
+
+jobs:
+  destroy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v2
+
+      - name: Setup Node.js (Install Node.js)
+        uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+
+      - name: Navigate to Terraform configuration
+        working-directory: terraform/eks-managed-node-group
+        run: pwd  # Prints the current directory to ensure we're in the right place
+
+      - name: Terraform Init with remote state
+        working-directory: terraform/eks-managed-node-group
+        run: terraform init
+
+      - name: Terraform Destroy
+        working-directory: terraform/eks-managed-node-group
+        run: terraform destroy -auto-approve
+
+      - name: Delete S3 bucket for remote state
+        run: |
+          aws s3 rb s3://terraform-remote-state-eks-test --force
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
