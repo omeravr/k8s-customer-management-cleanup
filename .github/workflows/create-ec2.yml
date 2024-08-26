@@ -1,7 +1,7 @@
-name: Create EC2 with S3 State
+name: EC2 Deployment with Remote State in S3
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger
 
 jobs:
   deploy:
@@ -19,27 +19,40 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      # Step 1: Create the S3 bucket to store the Terraform state
-      - name: Create S3 Bucket
+      - name: Create S3 bucket for remote state
         run: |
-          aws s3api create-bucket --bucket terraform-remote-state-ec2-test --region eu-central-1
-          aws s3api wait bucket-exists --bucket terraform-remote-state-ec2-test
+          aws s3api create-bucket --bucket terraform-remote-state-ec2-test --region eu-central-1 --create-bucket-configuration LocationConstraint=eu-central-1 || echo "Bucket already exists"
         env:
-          AWS_REGION: eu-central-1
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
 
-      # Step 2: Initialize Terraform and create EC2 instance
-      - name: Terraform Init and Apply
+      - name: Navigate to Terraform configuration
+        working-directory: terraform/ec2
+        run: pwd  # Prints the current directory to ensure we're in the right place
+
+      - name: Create terraform.tfvars file
+        working-directory: terraform/ec2
+        run: |
+          echo 'aws_region       = "${{ secrets.AWS_REGION }}"' > terraform.tfvars
+
+      - name: Terraform Init with remote state
         working-directory: terraform/ec2
         run: |
           terraform init -backend-config="bucket=terraform-remote-state-ec2-test" \
-                         -backend-config="key=terraform/ec2/state.tfstate" \
-                         -backend-config="region=eu-central-1" \
-                         -backend-config="encrypt=true"
-          terraform apply -auto-approve
-        env:
-          AWS_REGION: eu-central-1
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            -backend-config="key=ec2/terraform.tfstate" \
+            -backend-config="region=eu-central-1" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Plan
+        working-directory: terraform/ec2
+        run: terraform plan
+
+      - name: Terraform Apply
+        working-directory: terraform/ec2
+        run: terraform apply -auto-approve
+
+      # Handle cleanup if Terraform apply fails
+      - name: Terraform Destroy on Failure
+        if: failure()
+        working-directory: terraform/ec2
+        run: terraform destroy -auto-approve
 

@@ -1,7 +1,7 @@
-name: Destroy EC2 and S3
+name: EC2 Teardown with Remote State in S3
 
 on:
-  workflow_dispatch:
+  workflow_dispatch:  # Manual trigger
 
 jobs:
   destroy:
@@ -19,35 +19,25 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
 
-      # Step 1: Initialize Terraform and destroy EC2 instance
-      - name: Terraform Init and Destroy EC2
+      - name: Navigate to Terraform configuration
+        working-directory: terraform/ec2
+        run: pwd  # Prints the current directory to ensure we're in the right place
+
+      - name: Terraform Init with remote state
         working-directory: terraform/ec2
         run: |
           terraform init -backend-config="bucket=terraform-remote-state-ec2-test" \
-                         -backend-config="key=terraform/ec2/state.tfstate" \
-                         -backend-config="region=eu-central-1" \
-                         -backend-config="encrypt=true"
-          terraform destroy -auto-approve
-        env:
-          AWS_REGION: eu-central-1
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+            -backend-config="key=ec2/terraform.tfstate" \
+            -backend-config="region=eu-central-1" \
+            -backend-config="encrypt=true"
 
-      # Step 2: Empty the S3 Bucket
-      - name: Empty S3 Bucket
-        run: |
-          aws s3 rm s3://terraform-remote-state-ec2-test --recursive
-        env:
-          AWS_REGION: eu-central-1
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - name: Terraform Destroy
+        working-directory: terraform/ec2
+        run: terraform destroy -auto-approve
 
-      # Step 3: Delete S3 Bucket
-      - name: Delete S3 Bucket
+      - name: Delete S3 bucket for remote state
         run: |
-          aws s3api delete-bucket --bucket terraform-remote-state-ec2-test --region eu-central-1
+          aws s3 rb s3://terraform-remote-state-ec2-test --force
         env:
-          AWS_REGION: eu-central-1
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: ${{ secrets.AWS_REGION }}
 
