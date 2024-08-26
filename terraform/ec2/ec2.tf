@@ -2,6 +2,14 @@ provider "aws" {
   region = "eu-central-1"
 }
 
+terraform {
+  backend "s3" {
+    bucket = "terraform-remote-state-ec2-test"
+    key    = "ec2/terraform.tfstate"
+    region = "eu-central-1"
+  }
+}
+
 # EC2 instance creation
 resource "aws_instance" "example" {
   ami           = "ami-0d1ddd83282187d18"
