@@ -58,7 +58,7 @@ jobs:
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.CLUSTER_NAME }}
 
-      - name: Install AWS Load Balancer Controller
+      - name: Install AWS Load Balancer Controller IAM Service Account
         run: |
           eksctl create iamserviceaccount \
             --cluster ${{ secrets.CLUSTER_NAME }} \
@@ -67,6 +67,13 @@ jobs:
             --attach-policy-arn ${{ secrets.AWS_LBC_POLICY_ARN }} \
             --approve
 
+      - name: Add EKS Helm Repository
+        run: |
+          helm repo add eks https://aws.github.io/eks-charts
+          helm repo update
+
+      - name: Install AWS Load Balancer Controller Helm Chart
+        run: |
           helm install aws-load-balancer-controller eks/aws-load-balancer-controller \
             -n kube-system \
             --set clusterName=${{ secrets.CLUSTER_NAME }} \
@@ -74,6 +81,7 @@ jobs:
             --set serviceAccount.name=aws-load-balancer-controller \
             --set region=${{ secrets.AWS_REGION }} \
             --set vpcId=${{ secrets.VPC_ID }}
+
 
       - name: Deploy NGINX App
         run: kubectl apply -f app/test/nginx-deployment.yaml
