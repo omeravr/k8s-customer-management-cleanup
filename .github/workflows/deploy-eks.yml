@@ -83,6 +83,11 @@ jobs:
             --set vpcId=${{ secrets.VPC_ID }}
 
 
+      - name: Wait for AWS Load Balancer Controller Webhook Service
+        run: |
+          kubectl rollout status deployment aws-load-balancer-controller -n kube-system --timeout=300s
+
+
       - name: Deploy NGINX App
         run: kubectl apply -f app/test/nginx-deployment.yaml
 
