@@ -58,6 +58,12 @@ jobs:
       - name: Update kubeconfig for EKS
         run: aws eks update-kubeconfig --region ${{ secrets.AWS_REGION }} --name ${{ secrets.CLUSTER_NAME }}
 
+      - name: Check cluster readiness
+        run: |
+          for i in {1..10}; do
+            kubectl get nodes && break || sleep 30
+          done
+
       - name: Install AWS Load Balancer Controller IAM Service Account
         run: |
           eksctl create iamserviceaccount \
