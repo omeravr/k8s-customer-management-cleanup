@@ -25,11 +25,25 @@ jobs:
 
       - name: Terraform Init with remote state
         working-directory: terraform/eks-managed-node-group
-        run: terraform init
+        run: |
+          terraform init -backend-config="bucket=terraform-remote-state-eks-test" \
+            -backend-config="key=eks/terraform.tfstate" \
+            -backend-config="region=eu-central-1" \
+            -backend-config="encrypt=true"
 
       - name: Terraform Destroy
         working-directory: terraform/eks-managed-node-group
         run: terraform destroy -auto-approve
+
+      - name: Delete IAM Service Account
+        run: |
+          eksctl delete iamserviceaccount \
+            --cluster ${{ secrets.CLUSTER_NAME }} \
+            --namespace kube-system \
+            --name aws-load-balancer-controller \
+            --wait
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
 
       - name: Delete S3 bucket for remote state
         run: |
