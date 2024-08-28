@@ -102,15 +102,6 @@ jobs:
         run: |
           echo "Fetching Target Group ARN..."
           TG_ARN=$(aws elbv2 describe-target-groups --query "TargetGroups[?TargetGroupName=='eks-nlb-tg'].TargetGroupArn" --output text)
-          echo "Target Group ARN: $TG_ARN"
-          
-          if [ -z "$TG_ARN" ]; then
-            echo "Error: TG_ARN is empty. Exiting."
-            exit 1
-          fi
-          
-          sed -i "s#TARGET_GROUP_ARN_PLACEHOLDER#${TG_ARN}#g" app/test/targetgroupbinding.yaml
+          sed -i "s#\"\"#\"${TG_ARN}\"#g" app/test/targetgroupbinding.yaml
           cat app/test/targetgroupbinding.yaml  # Display the file to confirm replacement
           kubectl apply -f app/test/targetgroupbinding.yaml
-
-      
