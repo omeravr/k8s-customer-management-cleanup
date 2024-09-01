@@ -31,6 +31,16 @@ jobs:
           echo 'instance_types   = ["${{ secrets.INSTANCE_TYPES }}"]' | sed 's/,/", "/g' >> terraform.tfvars
           echo 'lb_internal      = "${{ secrets.LB_INTERNAL }}"' >> terraform.tfvars
 
+      - name: Delete IAM Service Account
+        run: |
+          eksctl delete iamserviceaccount \
+            --cluster ${{ secrets.CLUSTER_NAME }} \
+            --namespace kube-system \
+            --name aws-load-balancer-controller \
+            --wait
+        env:
+          AWS_REGION: ${{ secrets.AWS_REGION }}
+
       - name: Terraform Init with remote state
         working-directory: terraform/eks-managed-node-group
         run: |
@@ -43,18 +53,9 @@ jobs:
         working-directory: terraform/eks-managed-node-group
         run: terraform destroy -auto-approve
 
-      - name: Delete IAM Service Account
-        run: |
-          eksctl delete iamserviceaccount \
-            --cluster ${{ secrets.CLUSTER_NAME }} \
-            --namespace kube-system \
-            --name aws-load-balancer-controller \
-            --wait
-        env:
-          AWS_REGION: ${{ secrets.AWS_REGION }}
-
       - name: Delete S3 bucket for remote state
         run: |
           aws s3 rb s3://terraform-remote-state-eks-test --force
         env:
           AWS_REGION: ${{ secrets.AWS_REGION }}
+
